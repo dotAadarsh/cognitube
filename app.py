@@ -1,11 +1,13 @@
-import streamlit as st 
+from deepgram import Deepgram
+import json
 import youtube_dl
-from configure import auth_key
-import requests
-from time import sleep
+import streamlit as st
 
-if 'status' not in st.session_state:
-    st.session_state['status'] = 'submitted'
+st.header("TL;DW")
+st.caption("Too Long Didn't Watch")
+
+DEEPGRAM_API_KEY = 'API_KEY'
+PATH_TO_FILE = ''
 
 ydl_opts = {
     'format': 'bestaudio/best',
@@ -18,18 +20,8 @@ ydl_opts = {
     'outtmpl': "./%(id)s.%(ext)s",
 }
 
-transcript_endpoint = "https://api.assemblyai.com/v2/transcript"
-upload_endpoint = 'https://api.assemblyai.com/v2/upload'
-
-headers_auth_only = {'authorization': auth_key}
-headers = {
-    "authorization": auth_key,
-    "content-type": "application/json"
-}
-CHUNK_SIZE=5242880
-
 @st.cache
-def transcribe_from_link(link, categories):
+def download_video(link):
     _id = link.strip()
 
     def get_vid(_id):
@@ -40,57 +32,30 @@ def transcribe_from_link(link, categories):
     save_location = meta['id'] + ".mp3"
 
     print('Save mp3 to', save_location)
-
-    def read_file(filename):
-        with open(filename, 'rb') as _file:
-            while True:
-                data = _file.read(CHUNK_SIZE)
-                if not data:
-                    break
-                yield data
-
-    # upload audio file to assemblyai
-    upload_response = requests.post(
-        upload_endpoint,
-        headers=headers_auth_only,
-        data=read_file(save_location))
-
-    audio_url = upload_response.json()['upload_url']
-    print("Uploaded to ", audio_url)
-
-    transcript_request = {
-        'audio_url': audio_url,
-        "iab_categories": 'True' if categories else 'False',
-    }
-
-    transcript_response = requests.post(transcript_endpoint, json=transcript_request, headers=headers)
+    return save_location
+@st.cache
+def transcribe(PATH_TO_FILE):
+    # Initializes the Deepgram SDK
+    deepgram = Deepgram(DEEPGRAM_API_KEY)
+    # Open the audio file
+    with open(PATH_TO_FILE, 'rb') as audio:
+        # ...or replace mimetype as appropriate
+        source = {'buffer': audio, 'mimetype': 'audio/wav'}
+        response = deepgram.transcription.sync_prerecorded(source, {'punctuate': True})
+        # response_result = json.dumps(response, indent=4)
     
-    transcript_id = transcript_response.json()['id']
-    polling_endpoint = transcript_endpoint + "/" + transcript_id
+    return response
 
-    print("Transcribing at", polling_endpoint)
-    
-    return polling_endpoint
-
-def get_status(polling_endpoint):
-    polling_response = requests.get(polling_endpoint, headers=headers)
-    st.session_state['status'] = polling_response.json()['status']
-
-def refresh_status():
-    st.session_state['status'] = 'submitted'
-
-st.header("Transcribe video")
-
-link = st.text_input("Enter the link", value="https://youtu.be/Ji1DKxzJ-js", on_change=refresh_status)
+link = st.text_input("Enter the YT URL", value="https://youtu.be/4WEQtgnBu0I")
 st.video(link)
-st.text('The transcription is ' + st.session_state['status'])
 
-polling_endpoint = transcribe_from_link(link, False)
-st.button('check_status', on_click=get_status, args=(polling_endpoint,))
+PATH_TO_FILE = download_video(link)
+response = transcribe(PATH_TO_FILE)
 
-transcript = ''
-if st.session_state['status'] == 'completed':
-    polling_response = requests.get(polling_endpoint, headers=headers)
-    transcript = polling_response.json()['text']
+tab1, tab2, tab3 = st.tabs(["📜 Summary", "🗣️ Translate", "📎Resources"])
 
-st.write(transcript)
+with tab1:
+
+    transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
+    st.write(transcript)
+    st.json(json.dumps(response, indent=4))
