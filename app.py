@@ -2,6 +2,8 @@ from deepgram import Deepgram
 import json
 import youtube_dl
 import streamlit as st
+from languages import languages
+from itranslate import itranslate as itrans
 
 st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
@@ -33,6 +35,7 @@ def download_video(link):
 
     print('Save mp3 to', save_location)
     return save_location
+
 @st.cache
 def transcribe(PATH_TO_FILE):
     # Initializes the Deepgram SDK
@@ -45,6 +48,10 @@ def transcribe(PATH_TO_FILE):
         # response_result = json.dumps(response, indent=4)
     
     return response
+
+@st.cache
+def translate(text, to_lang):
+    return itrans(text, to_lang = to_lang)
 
 link = st.text_input("Enter the YT URL", value="https://youtu.be/4WEQtgnBu0I")
 st.video(link)
@@ -59,3 +66,10 @@ with tab1:
     transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
     st.write(transcript)
     st.json(json.dumps(response, indent=4))
+
+if tab2:
+    with tab2:
+        to_lang = st.selectbox("Select the language", languages.values())
+        dest = list(languages.keys())[list(languages.values()).index(to_lang)]
+        st.write("language: ", dest)
+        st.write(translate(transcript, dest))
