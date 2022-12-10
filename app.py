@@ -44,7 +44,7 @@ def transcribe(PATH_TO_FILE):
     with open(PATH_TO_FILE, 'rb') as audio:
         # ...or replace mimetype as appropriate
         source = {'buffer': audio, 'mimetype': 'audio/wav'}
-        response = deepgram.transcription.sync_prerecorded(source, {'punctuate': True})
+        response = deepgram.transcription.sync_prerecorded(source, {'summarize': True, 'punctuate': True, "diarize": True, "utterances": True })
         # response_result = json.dumps(response, indent=4)
     
     return response
@@ -59,13 +59,20 @@ st.video(link)
 PATH_TO_FILE = download_video(link)
 response = transcribe(PATH_TO_FILE)
 
-tab1, tab2, tab3 = st.tabs(["📜 Summary", "🗣️ Translate", "📎Resources"])
+tab1, tab2, tab3 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources"])
 
 with tab1:
 
     transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
-    st.write(transcript)
-    st.json(json.dumps(response, indent=4))
+    summary = response["results"]["channels"][0]["alternatives"][0]["summaries"][0]["summary"]
+    st.json(json.dumps(response, indent=4),expanded=False)
+    
+    with st.expander("TL;DW"):
+        st.write(summary, expanded=True)
+
+    with st.expander("Transcript", expanded=False):
+        st.write(transcript)
+
 
 if tab2:
     with tab2:
