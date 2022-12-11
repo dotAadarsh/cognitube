@@ -4,37 +4,33 @@ import youtube_dl
 import streamlit as st
 from languages import languages
 from itranslate import itranslate as itrans
+from pathlib import Path
 
 st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
 
-DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
+DEEPGRAM_API_KEY =  "2f2de989cfc17bd318ec2e40214ed20f71a7baa2"
 PATH_TO_FILE = ''
-
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-    'ffmpeg-location': './',
-    'outtmpl': "./%(id)s.%(ext)s",
-}
 
 @st.cache
 def download_video(link):
-    _id = link.strip()
 
-    def get_vid(_id):
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(_id)
+    videoinfo = youtube_dl.YoutubeDL().extract_info(url = link, download=False)
+    filename = f"{videoinfo['id']}.mp3"
 
-    meta = get_vid(_id)
-    save_location = meta['id'] + ".mp3"
+    options = {
+        'format': 'bestaudio/best',
+        'keepvideo': False,
+        'outtmpl': filename,
+    }
 
-    print('Save mp3 to', save_location)
-    return save_location
+    with youtube_dl.YoutubeDL(options) as ydl:
+        ydl.download([videoinfo['webpage_url']])
+
+    base = Path.cwd()
+    PATH_TO_FILE = f"{base}/{filename}"
+
+    return PATH_TO_FILE
 
 @st.cache
 def transcribe(PATH_TO_FILE):
@@ -72,7 +68,6 @@ with tab1:
 
     with st.expander("Transcript", expanded=False):
         st.write(transcript)
-
 
 if tab2:
     with tab2:
