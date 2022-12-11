@@ -163,7 +163,6 @@ with tab1:
     transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
     summary = response["results"]["channels"][0]["alternatives"][0]["summaries"][0]["summary"]
     words = response["results"]["channels"][0]["alternatives"][0]["words"]
-    st.json(json.dumps(response, indent=4),expanded=False)
     
     with st.expander("TL;DW"):
         st.write(summary, expanded=True)
