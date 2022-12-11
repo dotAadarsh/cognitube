@@ -5,11 +5,14 @@ import streamlit as st
 from languages import languages
 from itranslate import itranslate as itrans
 from pathlib import Path
+import openai
 
 st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
 
-DEEPGRAM_API_KEY =  "2f2de989cfc17bd318ec2e40214ed20f71a7baa2"
+DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
+openai.api_key = st.secrets["OPEN_AI_API "]
+
 PATH_TO_FILE = ''
 
 @st.cache
@@ -40,7 +43,7 @@ def transcribe(PATH_TO_FILE):
     with open(PATH_TO_FILE, 'rb') as audio:
         # ...or replace mimetype as appropriate
         source = {'buffer': audio, 'mimetype': 'audio/wav'}
-        response = deepgram.transcription.sync_prerecorded(source, {'summarize': True, 'punctuate': True, "diarize": True, "utterances": True })
+        response = deepgram.transcription.sync_prerecorded(source, {'summarize': True, 'punctuate': True, "diarize": True, "utterances": True, "detect_topics": True, "numerals": True})
         # response_result = json.dumps(response, indent=4)
     
     return response
@@ -56,6 +59,22 @@ PATH_TO_FILE = download_video(link)
 response = transcribe(PATH_TO_FILE)
 
 tab1, tab2, tab3 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources"])
+
+def extract_keywords(transcript):
+
+    response_openai = openai.Completion.create(
+    model="text-davinci-002",
+    prompt=f'Extract keywords from this text:\n\n{transcript}',
+    temperature=0.3,
+    max_tokens=60,
+    top_p=1.0,
+    frequency_penalty=0.8,
+    presence_penalty=0.0
+    )
+    keywords_results = response_openai["choices"][0]["text"].split(',')
+
+    return keywords_results
+
 
 with tab1:
 
@@ -75,3 +94,19 @@ if tab2:
         dest = list(languages.keys())[list(languages.values()).index(to_lang)]
         st.write("language: ", dest)
         st.write(translate(transcript, dest))
+if tab3:
+    with tab3:
+        topics = response["results"]["channels"][0]["alternatives"][0]["topics"][0]["topics"]
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            if len(topics) == 0:
+                st.info("No topics detected!")
+            else:
+                for t in topics:
+                    # topic_list.append(t["topic"])
+                    st.button(label=t["topic"], disabled=False)
+
+        with col2:
+            keywords = extract_keywords(transcript)
+            for keyword in keywords:
+                st.write(keyword)
