@@ -7,10 +7,42 @@ from itranslate import itranslate as itrans
 from pathlib import Path
 import openai
 from streamlit_quill import st_quill
+from fpdf import FPDF
+import base64
 
-st.header("TL;DW")
-st.caption("Too Long Didn't Watch")
+st.set_page_config(
+    page_title="CogniTube",
+    page_icon="🎞️",
+    layout="centered",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Report a bug': "https://github.com/dotaadarsh/YouTXT/discussions/1",
+        'About': "CogniTube - Unleash the power of AI on YouTube"
+    }
+)
 
+st.header("CogniTube")
+st.caption("Cognitive + YouTube")
+with st.sidebar:
+    st.write("Created for AssemblyAI Hackathon")
+    st.info("Please keep the video duration <~3min [Longer the duration, the longer it takes!]")
+    with st.expander("What it can do?", expanded=True):
+        st.markdown("""
+        - TL;DW - Too Long Did'nt Watch
+        - Translate to differnt languages
+        - Topics, Keywords, and external links
+        - Create AI generated blogs
+        - Export to audio and PDF
+""")
+
+    with st.expander("Further Implementation"):
+        st.markdown("""
+        - Platform for content creator to work on their videos
+        - Use AI to create content and simplifies their work 
+        - Integrate various platforms
+        - Analyze feedbacks and audiences
+        """)
+    
 DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
 openai.api_key = st.secrets["OPEN_AI_API"]
 
@@ -84,13 +116,48 @@ def create_content(transcript):
     markdown_content = response["choices"][0]["text"]
     return markdown_content
 
-link = st.text_input("Enter the YT URL", value="https://youtu.be/4WEQtgnBu0I")
+def get_websites(transcript):
+
+    response = openai.Completion.create(
+    model="text-davinci-003",
+    prompt=f"provide the website links for the mentioned brands and third parties in the following transcript\n{transcript}\n",
+    temperature=0.7,
+    max_tokens=250,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0
+)
+    websites = response["choices"][0]["text"]
+    return websites
+
+@st.cache
+def export_pdf(transcript):
+
+    report_text = transcript
+    export_as_pdf = st.button("Export transcript in PDF")
+
+    def create_download_link(val, filename):
+        b64 = base64.b64encode(val)  # val looks like b'...'
+        return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.pdf">Download file</a>'
+
+    if export_as_pdf:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font('Arial', '', 12)
+        pdf.write(5, report_text)
+        
+        html = create_download_link(pdf.output(dest="S").encode("latin-1"), "test")
+
+        st.markdown(html, unsafe_allow_html=True)
+
+
+link = st.text_input("Enter the YT URL", value="https://youtu.be/Ji1DKxzJ-js")
 st.video(link)
 
 PATH_TO_FILE = download_video(link)
 response = transcribe(PATH_TO_FILE)
 
-tab1, tab2, tab3, tab4 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources", "✒️ Create"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources", "✒️ Create", "↗️ Export"])
 
 with tab1:
 
@@ -110,6 +177,7 @@ if tab2:
         dest = list(languages.keys())[list(languages.values()).index(to_lang)]
         st.write("language: ", dest)
         st.write(translate(transcript, dest))
+
 if tab3:
     with tab3:
         topics = response["results"]["channels"][0]["alternatives"][0]["topics"][0]["topics"]
@@ -117,18 +185,28 @@ if tab3:
         with col1:
             if len(topics) == 0:
                 st.info("No topics detected!")
+
             else:
                 for t in topics:
                     # topic_list.append(t["topic"])
                     st.button(label=t["topic"], disabled=False)
+            
+            websites = get_websites(transcript)
+            st.markdown(websites)
 
         with col2:
             keywords = extract_keywords(transcript)
             for keyword in keywords:
-                st.write(keyword)
+                st.button(keyword)      
 
 if tab4:
     with tab4:
         markdown_content = create_content(transcript)
         st.markdown(markdown_content)
         content = st_quill(value=markdown_content, placeholder='Start Writing', html=False, toolbar=None, history=None, preserve_whitespace=True, readonly=False, key=None)
+
+if tab5:
+    with tab5:
+        st.audio(PATH_TO_FILE)
+        export_pdf(transcript)
+
