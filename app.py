@@ -6,6 +6,7 @@ from languages import languages
 from itranslate import itranslate as itrans
 from pathlib import Path
 import openai
+from streamlit_quill import st_quill
 
 st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
@@ -52,14 +53,7 @@ def transcribe(PATH_TO_FILE):
 def translate(text, to_lang):
     return itrans(text, to_lang = to_lang)
 
-link = st.text_input("Enter the YT URL", value="https://youtu.be/4WEQtgnBu0I")
-st.video(link)
-
-PATH_TO_FILE = download_video(link)
-response = transcribe(PATH_TO_FILE)
-
-tab1, tab2, tab3 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources"])
-
+@st.cache
 def extract_keywords(transcript):
 
     response_openai = openai.Completion.create(
@@ -75,6 +69,28 @@ def extract_keywords(transcript):
 
     return keywords_results
 
+@st.cache
+def create_content(transcript):
+
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=f"Create a blog post in markdown format and also add an image for the given transcript\n{transcript}\n",
+        temperature=0.7,
+        max_tokens=600,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+    markdown_content = response["choices"][0]["text"]
+    return markdown_content
+
+link = st.text_input("Enter the YT URL", value="https://youtu.be/4WEQtgnBu0I")
+st.video(link)
+
+PATH_TO_FILE = download_video(link)
+response = transcribe(PATH_TO_FILE)
+
+tab1, tab2, tab3, tab4 = st.tabs(["📜 TL;DW", "🗣️ Translate", "📎Resources", "✒️ Create"])
 
 with tab1:
 
@@ -110,3 +126,9 @@ if tab3:
             keywords = extract_keywords(transcript)
             for keyword in keywords:
                 st.write(keyword)
+
+if tab4:
+    with tab4:
+        markdown_content = create_content(transcript)
+        st.markdown(markdown_content)
+        content = st_quill(value=markdown_content, placeholder='Start Writing', html=False, toolbar=None, history=None, preserve_whitespace=True, readonly=False, key=None)
