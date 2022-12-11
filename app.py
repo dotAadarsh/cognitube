@@ -8,7 +8,7 @@ from itranslate import itranslate as itrans
 st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
 
-DEEPGRAM_API_KEY = 'API_KEY'
+DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
 PATH_TO_FILE = ''
 
 ydl_opts = {
