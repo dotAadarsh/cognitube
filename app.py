@@ -149,7 +149,7 @@ def export_pdf(transcript):
 
         st.markdown(html, unsafe_allow_html=True)
 
-link = st.text_input("Enter the YT URL", value="https://youtu.be/Ji1DKxzJ-js")
+link = st.text_input("Enter the YT URL", value="https://youtu.be/JYs_94znYy0")
 st.video(link)
 
 PATH_TO_FILE = download_video(link)
