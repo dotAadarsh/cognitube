@@ -12,7 +12,7 @@ st.header("TL;DW")
 st.caption("Too Long Didn't Watch")
 
 DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
-openai.api_key = st.secrets["OPEN_AI_API "]
+openai.api_key = st.secrets["OPEN_AI_API"]
 
 PATH_TO_FILE = ''
 
