@@ -130,7 +130,6 @@ def get_websites(transcript):
     websites = response["choices"][0]["text"]
     return websites
 
-@st.cache
 def export_pdf(transcript):
 
     report_text = transcript
