@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded",
     menu_items={
-        'Report a bug': "https://github.com/dotaadarsh/YouTXT/discussions/1",
+        'Report a bug': "https://github.com/dotaadarsh/cognitube/discussions/14",
         'About': "CogniTube - Unleash the power of AI on YouTube"
     }
 )
