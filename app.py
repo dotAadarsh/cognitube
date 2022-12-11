@@ -43,8 +43,8 @@ with st.sidebar:
         - Analyze feedbacks and audiences
         """)
     
-openai.api_key = st.text_input("Please enter OpenAI API key")
-DEEPGRAM_API_KEY = st.text_input("Please enter Deepgram API key")
+DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
+openai.api_key = st.secrets["OPEN_AI_API"]
 
 PATH_TO_FILE = ''
 
