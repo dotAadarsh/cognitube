@@ -43,8 +43,8 @@ with st.sidebar:
         - Analyze feedbacks and audiences
         """)
     
-DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
-openai.api_key = st.secrets["OPEN_AI_API"]
+openai.api_key = st.text_input("Please enter OpenAI API key")
+DEEPGRAM_API_KEY = st.text_input("Please enter Deepgram API key")
 
 PATH_TO_FILE = ''
 
@@ -149,7 +149,6 @@ def export_pdf(transcript):
 
         st.markdown(html, unsafe_allow_html=True)
 
-
 link = st.text_input("Enter the YT URL", value="https://youtu.be/Ji1DKxzJ-js")
 st.video(link)
 
@@ -162,6 +161,7 @@ with tab1:
 
     transcript = response["results"]["channels"][0]["alternatives"][0]["transcript"]
     summary = response["results"]["channels"][0]["alternatives"][0]["summaries"][0]["summary"]
+    words = response["results"]["channels"][0]["alternatives"][0]["words"]
     st.json(json.dumps(response, indent=4),expanded=False)
     
     with st.expander("TL;DW"):
@@ -169,6 +169,18 @@ with tab1:
 
     with st.expander("Transcript", expanded=False):
         st.write(transcript)
+
+    with st.expander("Search the video"):
+        search = dict()
+
+        for item in words:
+            search[item["word"]] =  item["start"]
+
+        keyword = st.text_input("Enter the word")
+
+        if keyword in search:
+            time = int(search[keyword])
+            st.video(link, start_time=time)
 
 if tab2:
     with tab2:
