@@ -2,3 +2,4 @@ deepgram-sdk==2.2.0
 itranslate==0.1.2
 streamlit==1.15.2
 youtube-dl==2021.12.17
+ffmpeg-python==0.2.0
