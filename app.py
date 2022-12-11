@@ -42,6 +42,7 @@ with st.sidebar:
         - Integrate various platforms
         - Analyze feedbacks and audiences
         """)
+    st.info("If anything fails, try reloading. Bug/error? Report at GitHub discussion (top right menu)")
     
 DEEPGRAM_API_KEY =  st.secrets["DEEPGRAM_API_KEY"]
 openai.api_key = st.secrets["OPEN_AI_API"]
